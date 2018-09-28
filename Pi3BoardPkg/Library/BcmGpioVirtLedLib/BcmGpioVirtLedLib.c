@@ -20,36 +20,11 @@
 #include <BcmMailbox.h>
 
 //volatile MAILBOX_GET_GPIO_VIRT_ADDR MbGetGpiovirtAddr __attribute__((aligned(16)));
-volatile MAILBOX_GET_MAC MbGMac __attribute__((aligned(16)));
 
 VOID
 LedInit (
   )
 {
-    DEBUG((DEBUG_ERROR, "MAC START"));
-    EFI_STATUS Status;
-
-    ZeroMem((void*)&MbGMac, sizeof(MbGMac));
-    MbGMac.Header.BufferSize = sizeof(MbGMac);
-    MbGMac.Header.TagID = TAG_GET_BOARD_MAC;
-    MbGMac.Header.TagLength = 6;
-
-    Status = MailboxProperty(
-        MAILBOX_CHANNEL_PROPERTY_ARM_VC,
-        (MAILBOX_HEADER*)&MbGMac
-        );
-    if (EFI_ERROR(Status))
-    {
-        DEBUG((DEBUG_ERROR, "MAC FAIL"));
-        return;
-    }
-    int i;
-    DEBUG((DEBUG_ERROR, "MAC:"));
-    for( i = 0; i < 6; i++)
-    {
-        DEBUG((DEBUG_ERROR, "0x%x:", MbGMac.BoardMac[i]));
-    }
-    DEBUG((DEBUG_ERROR, "\n"));
     /*
     EFI_STATUS Status;
 
