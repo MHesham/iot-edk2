@@ -445,7 +445,7 @@ EFI_STATUS InitializeMmcDevice(
     EFI_MMC_HOST_PROTOCOL   *MmcHost;
     UINT32                  BlockCount;
     UINT32                  ECSD[128];
-    
+
 #if MMC_COLLECT_STATISTICS
     UINT64                  InitializationStartTime = GetPerformanceCounter();
 #endif // MMC_COLLECT_STATISTICS
@@ -514,6 +514,7 @@ EFI_STATUS InitializeMmcDevice(
 
     if (MmcHostInstance->CardInfo.CardType == MMC_CARD) {
         // Fetch ECSD
+        CmdArg = MmcHostInstance->CardInfo.RCA << 16;
         Status = MmcHost->SendCommand(MmcHost, MMC_CMD8, CmdArg);
         if (EFI_ERROR(Status)) {
             DEBUG((EFI_D_ERROR, "MmcDxe: InitializeMmcDevice(): ECSD fetch error, Status=%r.\n", Status));
