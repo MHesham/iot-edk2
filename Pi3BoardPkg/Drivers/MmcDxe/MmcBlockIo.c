@@ -445,7 +445,7 @@ EFI_STATUS InitializeMmcDevice(
     EFI_MMC_HOST_PROTOCOL   *MmcHost;
     UINT32                  BlockCount;
     UINT32                  ECSD[128];
-
+    
 #if MMC_COLLECT_STATISTICS
     UINT64                  InitializationStartTime = GetPerformanceCounter();
 #endif // MMC_COLLECT_STATISTICS
