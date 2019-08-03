@@ -35,6 +35,7 @@
   ..\..\Pi2BoardPkg\AcpiTables\Common\Madt.aslc
   ..\..\Pi2BoardPkg\AcpiTables\Common\Gtdt.aslc
   ..\..\Pi2BoardPkg\AcpiTables\Common\CSRT.aslc
+  ..\..\Pi2BoardPkg\AcpiTables\Common\Tpm2.aslc
   Dbg2.aslc
 [Packages]
   MdePkg/MdePkg.dec
