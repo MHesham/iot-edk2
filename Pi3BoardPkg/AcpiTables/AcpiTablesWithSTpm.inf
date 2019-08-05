@@ -29,12 +29,14 @@
 #
 
 [Sources]
-  Common\Platform.h
+  ..\..\Pi2BoardPkg\AcpiTables\Common\Platform.h
+  ..\..\Pi2BoardPkg\AcpiTables\Common\Fadt.aslc
+  ..\..\Pi2BoardPkg\AcpiTables\Common\DSDT.asl
+  ..\..\Pi2BoardPkg\AcpiTables\Common\Madt.aslc
+  ..\..\Pi2BoardPkg\AcpiTables\Common\Gtdt.aslc
+  ..\..\Pi2BoardPkg\AcpiTables\Common\CSRT.aslc
+  ..\..\Pi2BoardPkg\AcpiTables\Common\SoftwareTpm2Table.aslc
+  ..\..\Pi2BoardPkg\AcpiTables\Common\SoftwareTpm2Device.asl
   Dbg2.aslc
-  Common\Fadt.aslc
-  Common\DSDT.asl
-  Common\Madt.aslc
-  Common\Gtdt.aslc
-  Common\CSRT.aslc
 [Packages]
   MdePkg/MdePkg.dec

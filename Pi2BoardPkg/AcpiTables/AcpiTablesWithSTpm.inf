@@ -31,6 +31,8 @@
 [Sources]
   Common\Platform.h
   Dbg2.aslc
+  Common\SoftwareTpm2Table.aslc
+  Common\SoftwareTpm2Device.asl
   Common\Fadt.aslc
   Common\DSDT.asl
   Common\Madt.aslc
