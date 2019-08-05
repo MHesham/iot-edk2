@@ -29,6 +29,7 @@
   SKUID_IDENTIFIER               = DEFAULT
   FLASH_DEFINITION               = Pi3BoardPkg/Pi3BoardPkg.fdf
 
+  DEFINE CONFIG_DTPM_ENABLE      = FALSE
 
 [LibraryClasses.common]
   ArmLib|ArmPkg/Library/ArmLib/ArmV7/ArmV7Lib.inf
@@ -669,7 +670,11 @@
   #
   MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe.inf
   MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatformDxe.inf
+!if $(CONFIG_DTPM_ENABLE)
+  Pi3BoardPkg/AcpiTables/AcpiTablesWithDTpm.inf
+!else
   Pi3BoardPkg/AcpiTables/AcpiTables.inf
+!endif
 
   #
   # SMBIOS Support
