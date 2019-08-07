@@ -218,7 +218,21 @@ DisplayBlt(
     )
 {
     UINT8 *VidBuf, *BltBuf, *VidBuf1;
+    UINT32 GopWidth = This->Mode->Info->HorizontalResolution;
+    UINT32 GopHeight = This->Mode->Info->VerticalResolution;
     UINTN i, j;
+
+    if (Width > GopWidth) {
+        DEBUG((DEBUG_ERROR, "Console resolution width (%d) is higher than current GOP resolution width (%d)."
+            " Overriding console resolution width.\n", Width, GopWidth));
+        Width = GopWidth;
+    }
+
+    if (Height > GopHeight) {
+        DEBUG((DEBUG_ERROR, "Console resolution height (%d) is higher than current GOP resolution height (%d)."
+            " Overriding console resolution height.\n", Height, GopHeight));
+        Height = GopHeight;
+    }
 
     switch(BltOperation) {
     case EfiBltVideoFill:
