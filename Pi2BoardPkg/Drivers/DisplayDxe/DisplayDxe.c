@@ -202,6 +202,25 @@ DisplaySetMode(
     return EFI_SUCCESS;
 }
 
+BOOLEAN TruncateBltRange(
+    IN UINT32 GopUpperBound,
+    IN UINTN BltOffset,
+    IN OUT UINTN *BltRange,
+    OUT EFI_STATUS *Status
+)
+{
+    *Status = EFI_SUCCESS;
+    if (BltOffset + *BltRange > GopUpperBound) {
+        if (GopUpperBound > BltOffset) {
+            *BltRange = GopUpperBound - BltOffset;
+            return TRUE;
+        } else {
+            *Status = EFI_INVALID_PARAMETER;
+        }
+    }
+    return FALSE;
+}
+
 EFI_STATUS
 EFIAPI
 DisplayBlt(
@@ -220,18 +239,47 @@ DisplayBlt(
     UINT8 *VidBuf, *BltBuf, *VidBuf1;
     UINT32 GopWidth = This->Mode->Info->HorizontalResolution;
     UINT32 GopHeight = This->Mode->Info->VerticalResolution;
+    EFI_STATUS Status = EFI_SUCCESS;
     UINTN i, j;
 
-    if (Width > GopWidth) {
-        DEBUG((DEBUG_ERROR, "Console resolution width (%d) is higher than current GOP resolution width (%d)."
-            " Overriding console resolution width.\n", Width, GopWidth));
-        Width = GopWidth;
+    if (EfiBltVideoFill == BltOperation || EfiBltBufferToVideo == BltOperation || EfiBltVideoToVideo) {
+        if (TruncateBltRange(GopWidth, DestinationX, &Width, &Status)) {
+            DEBUG((DEBUG_ERROR, "Console resolution width is higher than current GOP resolution width (%d)."
+                " Overriding console resolution width.\n", GopWidth));
+        }
+
+        if (EFI_ERROR (Status)) {
+          goto Exit;
+        }
+
+        if (TruncateBltRange(GopHeight, DestinationY, &Height, &Status)) {
+            DEBUG((DEBUG_ERROR, "Console resolution height is higher than current GOP resolution height (%d)."
+                " Overriding console resolution height.\n", GopHeight));
+        }
+
+        if (EFI_ERROR (Status)) {
+          goto Exit;
+        }
     }
 
-    if (Height > GopHeight) {
-        DEBUG((DEBUG_ERROR, "Console resolution height (%d) is higher than current GOP resolution height (%d)."
-            " Overriding console resolution height.\n", Height, GopHeight));
-        Height = GopHeight;
+    if (EfiBltVideoToBltBuffer == BltOperation || EfiBltVideoToVideo == BltOperation) {
+        if (TruncateBltRange(GopWidth, SourceX, &Width, &Status)) {
+            DEBUG((DEBUG_ERROR, "Console resolution width is higher than current GOP resolution width (%d)."
+                " Overriding console resolution width.\n", GopWidth));
+        }
+
+        if (EFI_ERROR (Status)) {
+          goto Exit;
+        }
+
+        if (TruncateBltRange(GopHeight, SourceY, &Height, &Status)) {
+            DEBUG((DEBUG_ERROR, "Console resolution height (%d) is higher than current GOP resolution height (%d)."
+                " Overriding console resolution height.\n", Height, GopHeight));
+        }
+
+        if (EFI_ERROR (Status)) {
+          goto Exit;
+        }
     }
 
     switch(BltOperation) {
@@ -311,7 +359,9 @@ DisplayBlt(
         break;
     }
 
-    return EFI_SUCCESS;
+Exit:
+    ASSERT_EFI_ERROR(Status);
+    return Status;
 }
 
 
