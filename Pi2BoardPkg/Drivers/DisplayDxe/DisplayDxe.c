@@ -15,6 +15,7 @@
 
 #include <PiDxe.h>
 
+#include <limits.h>
 #include <BcmMailbox.h>
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
@@ -202,81 +203,6 @@ DisplaySetMode(
     return EFI_SUCCESS;
 }
 
-BOOLEAN TruncateBltRange(
-    IN UINT32 GopUpperBound,
-    IN UINTN BltOffset,
-    IN OUT UINTN *BltRange,
-    OUT EFI_STATUS *Status
-)
-{
-    *Status = EFI_SUCCESS;
-    if (BltOffset + *BltRange > GopUpperBound) {
-        if (GopUpperBound > BltOffset) {
-            *BltRange = GopUpperBound - BltOffset;
-            return TRUE;
-        } else {
-            *Status = EFI_INVALID_PARAMETER;
-        }
-    }
-    return FALSE;
-}
-
-EFI_STATUS TruncateBltRangeIfNecessary(
-    IN EFI_GRAPHICS_OUTPUT_BLT_OPERATION       BltOperation,
-    IN EFI_GRAPHICS_OUTPUT_PROTOCOL            *Gop,
-    IN UINTN                                   SourceX,
-    IN UINTN                                   SourceY,
-    IN UINTN                                   DestinationX,
-    IN UINTN                                   DestinationY,
-    IN OUT UINTN                               *Width,
-    IN OUT UINTN                               *Height
-)
-{
-    UINT32 GopWidth = Gop->Mode->Info->HorizontalResolution;
-    UINT32 GopHeight = Gop->Mode->Info->VerticalResolution;
-    EFI_STATUS Status = EFI_SUCCESS;
-
-    if (EfiBltVideoFill == BltOperation || EfiBltBufferToVideo == BltOperation || EfiBltVideoToVideo == BltOperation) {
-        if (TruncateBltRange(GopWidth, DestinationX, Width, &Status)) {
-            DEBUG((DEBUG_ERROR, "Console resolution width is higher than current GOP resolution width (%d)."
-                " Overriding console resolution width.\n", GopWidth));
-        }
-
-        if (EFI_ERROR (Status)) {
-          goto Exit;
-        }
-
-        if (TruncateBltRange(GopHeight, DestinationY, Height, &Status)) {
-            DEBUG((DEBUG_ERROR, "Console resolution height is higher than current GOP resolution height (%d)."
-                " Overriding console resolution height.\n", GopHeight));
-        }
-
-        if (EFI_ERROR (Status)) {
-          goto Exit;
-        }
-    }
-
-    if (EfiBltVideoToBltBuffer == BltOperation || EfiBltVideoToVideo == BltOperation) {
-        if (TruncateBltRange(GopWidth, SourceX, Width, &Status)) {
-            DEBUG((DEBUG_ERROR, "Console resolution width is higher than current GOP resolution width (%d)."
-                " Overriding console resolution width.\n", GopWidth));
-        }
-
-        if (EFI_ERROR (Status)) {
-          goto Exit;
-        }
-
-        if (TruncateBltRange(GopHeight, SourceY, Height, &Status)) {
-            DEBUG((DEBUG_ERROR, "Console resolution height is higher than current GOP resolution height (%d)."
-                " Overriding console resolution height.\n", GopHeight));
-        }
-    }
-
-Exit:
-    ASSERT_EFI_ERROR(Status);
-    return Status;
-}
-
 EFI_STATUS
 EFIAPI
 DisplayBlt(
@@ -293,21 +219,51 @@ DisplayBlt(
     )
 {
     UINT8 *VidBuf, *BltBuf, *VidBuf1;
+    EFI_STATUS Status = EFI_SUCCESS;
     UINTN i, j;
 
-    EFI_STATUS Status = TruncateBltRangeIfNecessary(
-        BltOperation,
-        This,
-        SourceX,
-        SourceY,
-        DestinationX,
-        DestinationY,
-        &Width,
-        &Height
-    );
+    UINT32 GopWidth = This->Mode->Info->HorizontalResolution;
+    UINT32 GopHeight = This->Mode->Info->VerticalResolution;
 
-    if (EFI_ERROR(Status)) {
-        return Status;
+    if (    EfiBltVideoFill == BltOperation
+            || EfiBltBufferToVideo == BltOperation
+            || EfiBltVideoToVideo == BltOperation) {
+
+        if (    UINT_MAX - Width < DestinationX
+                || UINT_MAX - Height < DestinationY) {
+
+            DEBUG((DEBUG_ERROR, "DisplayDxe: Arithmetic overflow detected. Blitting operation was omitted.\n"));
+            Status = EFI_INVALID_PARAMETER;
+            goto Exit;
+        }
+
+        if (    DestinationX + Width > GopWidth
+                || DestinationY + Height > GopHeight) {
+
+            DEBUG((DEBUG_ERROR, "DisplayDxe: Console resolution is higher than current GOP resolution. Blitting operation was omitted.\n"));
+            Status = EFI_INVALID_PARAMETER;
+            goto Exit;
+        }
+    }
+
+    if (    EfiBltVideoToBltBuffer == BltOperation
+            || EfiBltVideoToVideo == BltOperation) {
+
+        if (    UINT_MAX - Width < SourceX
+                || UINT_MAX - Height < SourceY) {
+
+            DEBUG((DEBUG_ERROR, "DisplayDxe: Arithmetic overflow detected. Blitting operation was omitted.\n"));
+                Status = EFI_INVALID_PARAMETER;
+                goto Exit;
+        }
+
+        if (    SourceX + Width > GopWidth
+                || SourceY + Height > GopHeight) {
+
+            DEBUG((DEBUG_ERROR, "DisplayDxe: Console resolution is higher than current GOP resolution. Blitting operation was omitted.\n"));
+            Status = EFI_INVALID_PARAMETER;
+            goto Exit;
+        }
     }
 
     switch(BltOperation) {
@@ -383,11 +339,12 @@ DisplayBlt(
         break;
 
     default:
-        ASSERT_EFI_ERROR(EFI_SUCCESS);
         break;
     }
 
-    return EFI_SUCCESS;
+Exit:
+    ASSERT_EFI_ERROR(Status);
+    return Status;
 }
 
 
