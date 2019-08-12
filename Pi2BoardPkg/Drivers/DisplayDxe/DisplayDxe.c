@@ -343,7 +343,6 @@ DisplayBlt(
     }
 
 Exit:
-    ASSERT_EFI_ERROR(Status);
     return Status;
 }
 
